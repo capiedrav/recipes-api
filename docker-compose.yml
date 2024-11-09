@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  recipe-app-api:
+    build: .
+    
+    ports:
+      - 8000:8000
+    
+    volumes:
+      - .:/recipe-app-api
+    
+    command: python /recipe-app-api/manage.py runserver 0.0.0.0:8000
+
+    container_name: "recipe-app-api-ctr"
