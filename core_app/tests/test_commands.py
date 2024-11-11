@@ -14,14 +14,14 @@ class CommandTests(SimpleTestCase):
         for connections.
         """
 
-        patched_check.return_value = True # mock check function returns True 
+        patched_check.return_value = True # mocked check function returns True 
 
         call_command("wait_for_db") # call function
 
         # check the function is called with the default database
-        patched_check.assert_called_once_with(database=["default", ])
+        patched_check.assert_called_once_with(databases=["default", ])
 
-    @patch("time.sleep")
+    @patch("time.sleep") # mock sleep function that is inside wait_for_db command
     def test_wait_for_db_when_db_is_not_ready(self, patched_sleep, patched_check):
         """
         Test waiting for the database when the database is not ready for connections.
@@ -36,4 +36,4 @@ class CommandTests(SimpleTestCase):
         self.assertEqual(patched_check.call_count, 6)
 
         # check the function is called with the default database
-        patched_check.assert_called_with(database=["default", ])
+        patched_check.assert_called_with(databases=["default", ])
