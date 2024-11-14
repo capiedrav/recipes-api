@@ -26,8 +26,17 @@ dependencies:
   - zlib=1.2.13=h5eee18b_1
   - pip:
       - asgiref==3.8.1
+      - attrs==24.2.0
       - django==4.2
       - djangorestframework==3.15.2
+      - drf-spectacular==0.27.2
+      - inflection==0.5.1
+      - jsonschema==4.23.0
+      - jsonschema-specifications==2024.10.1
+      - pyyaml==6.0.2
+      - referencing==0.35.1
+      - rpds-py==0.21.0
       - sqlparse==0.5.1
       - typing-extensions==4.12.2
+      - uritemplate==4.1.1
 prefix: /opt/anaconda3/envs/recipe-app-api
