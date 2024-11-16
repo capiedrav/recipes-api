@@ -44,6 +44,7 @@ INSTALLED_APPS = [
 
     # third-party apps
     "rest_framework",
+    "rest_framework.authtoken",
     "drf_spectacular",
 
 ]
