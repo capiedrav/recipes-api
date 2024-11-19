@@ -9,17 +9,18 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 
-CREATE_USER_URL = reverse("user:create")
+
 User = get_user_model()
 TOKEN_URL = reverse("user:token")
-
+CREATE_USER_URL = reverse("user:create")
+ME_URL = reverse("user:me")
 
 def create_user(**params):
     """
     Create and return a new user.
     """
 
-    User.objects.create_user(**params)
+    return User.objects.create_user(**params)
 
 
 class PublicUserApiTests(TestCase):
@@ -52,7 +53,7 @@ class PublicUserApiTests(TestCase):
         user = User.objects.get(email=self.payload["email"])
         
         self.assertTrue(user.check_password(self.payload["password"])) # check the password is correct
-        self.assertNotIn("password", response.data) # check the password is not a retrieved in the response
+        self.assertNotIn("password", response.data) # check the password is not retrieved in the response
 
     def test_user_email_already_exists_returns_error(self):
         """
@@ -126,3 +127,56 @@ class PublicUserApiTests(TestCase):
         # check that the token is not created
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertNotIn("token", response.data)
+
+    def test_user_authentication_is_required(self):
+        """
+        Test user auth is required to access "me" endpoint.
+        """
+
+        response = self.client.get(ME_URL)
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class PrivateUserApiTests(TestCase):
+    """
+    Test API requests that require authentication.
+    """
+
+    def setUp(self):
+        
+        self.user = create_user(email="testuser@example.com", password="testpass123", name="test user")
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+
+    def test_auth_user_can_retrieve_his_profile(self):
+
+        response = self.client.get(ME_URL)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {
+            "name": self.user.name,
+            "email": self.user.email
+        })
+
+    def test_auth_user_cant_POST_to_me_url(self):
+        """
+        Test can't make POST request to the "me" endpoint.
+        """
+
+        response = self.client.post(ME_URL, data={})
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+  
+    def test_auth_user_can_update_his_profile(self):
+        
+        # update user info
+        new_payload = {"name": "new name", "password": "newpass123"}         
+        response = self.client.patch(ME_URL, data=new_payload)
+
+        self.user.refresh_from_db() # get updated user info
+
+        # check the new info was stored correctly
+        self.assertEqual(self.user.name, new_payload["name"])
+        self.assertTrue(self.user.check_password(new_payload["password"]))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
