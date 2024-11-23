@@ -11,9 +11,9 @@ from rest_framework import status
 
 
 User = get_user_model()
-TOKEN_URL = reverse("user:token")
-CREATE_USER_URL = reverse("user:create")
-ME_URL = reverse("user:me")
+TOKEN_URL = reverse("user_app:token")
+CREATE_USER_URL = reverse("user_app:create")
+ME_URL = reverse("user_app:me")
 
 def create_user(**params):
     """
