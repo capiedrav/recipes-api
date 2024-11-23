@@ -41,6 +41,7 @@ INSTALLED_APPS = [
 
     # local apps
     "core_app.apps.CoreAppConfig",
+    "recipe_app.apps.RecipeAppConfig",
 
     # third-party apps
     "rest_framework",

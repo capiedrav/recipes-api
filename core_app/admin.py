@@ -5,7 +5,7 @@ Django admin customization.
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils.translation import gettext_lazy as gt_l
-from .models import User
+from .models import User, Recipe
 
 
 class CustomUserAdmin(UserAdmin):
@@ -59,3 +59,4 @@ class CustomUserAdmin(UserAdmin):
 
 # register models in admin site
 admin.site.register(User, CustomUserAdmin)
+admin.site.register(Recipe)
