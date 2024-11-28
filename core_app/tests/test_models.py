@@ -5,7 +5,7 @@ Tests for models.
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from decimal import Decimal
-from core_app.models import Recipe
+from core_app.models import Recipe, Tag
 
 
 User = get_user_model()
@@ -87,3 +87,26 @@ class RecipeModelTests(TestCase):
 
         self.assertEqual(Recipe.objects.count(), 1)
         self.assertEqual(str(recipe), recipe.title)         
+
+
+class TagModelTests(TestCase):
+    """
+    Tests for Tag model.
+    """
+
+    def create_user(self, email="testuser@example.com", password="testpass123"):
+        """
+        Create and return an user.
+        """
+
+        return User.objects.create_user(email, password)
+
+    def test_create_tag(self):
+        """
+        Test creating a tag is successful.
+        """
+
+        user = self.create_user()
+        tag = Tag.objects.create(user=user, name="Tag1")
+
+        self.assertEqual(str(tag), tag.name)
