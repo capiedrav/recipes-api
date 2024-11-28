@@ -11,9 +11,9 @@ from core_app.models import Recipe
 User = get_user_model()
 
 
-class ModelTests(TestCase):
+class UserModelTests(TestCase):
     """
-    Test models.    
+    Tests for User model.    
     """
 
     def test_create_user_with_email_successful(self):
@@ -64,6 +64,12 @@ class ModelTests(TestCase):
         self.assertTrue(user.is_superuser)
         self.assertTrue(user.is_staff)
 
+
+class RecipeModelTests(TestCase):
+    """
+    Tests for Recipe model.
+    """
+    
     def test_create_recipe(self):
         """
         Test creating a recipe is successful.
@@ -81,4 +87,3 @@ class ModelTests(TestCase):
 
         self.assertEqual(Recipe.objects.count(), 1)
         self.assertEqual(str(recipe), recipe.title)         
-
