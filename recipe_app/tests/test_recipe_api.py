@@ -8,8 +8,8 @@ from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
-from core_app.models import Recipe
-from recipe_app.serializers import RecipeSerializer, RecipeDetailSerializer
+from core_app.models import Recipe, Tag
+from recipe_app.serializers import RecipeSerializer, RecipeDetailSerializer, TagSerializer
 
 
 RECIPES_URL = reverse("recipe_app:recipe-list")
@@ -225,3 +225,98 @@ class PrivateRecipeAPITests(TestCase):
         # check the recipe was not deleted
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(Recipe.objects.count(), 1)
+
+    def test_create_recipe_with_tags(self):
+
+        # recipe with tags
+        payload = {
+            "title": "Thai Prawn Curry",
+            "time_minutes": 30,
+            "price": Decimal("2.50"),
+            "tags": [{"name": "Thai"}, {"name": "Dinner"}] # note the tags
+        }
+        response = self.client.post(RECIPES_URL, data=payload, format="json") # make a POST request to create the recipe
+
+        # check the recipe was created successfully
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)        
+        self.assertEqual(Recipe.objects.count(), 1)
+
+        # check also the tags
+        recipe = Recipe.objects.first()
+        self.assertEqual(recipe.tags.count(), 2) 
+        self.assertEqual(response.data["tags"], TagSerializer(recipe.tags, many=True).data)
+
+    def test_create_recipe_with_existing_tags_dont_duplicate_tags(self):
+
+        # create a tag
+        tag_1 = Tag.objects.create(user=self.user, name="Indian")
+
+        # recipe with tags
+        payload = {
+            "title": "Pongal",
+            "time_minutes": 60,
+            "price": Decimal("4.50"),
+            "tags": [
+                {"name": "Indian"}, # This tag already exists (tag_1)
+                {"name": "Breakfast"}
+            ]
+        }        
+        response = self.client.post(RECIPES_URL, data=payload, format="json") # make a POST request to create the recipe
+
+        # check the recipe was created successfully
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Recipe.objects.count(), 1)
+
+        # check for no duplicated tags
+        recipe = Recipe.objects.first()        
+        self.assertEqual(recipe.tags.count(), 2)
+        self.assertIn(tag_1, recipe.tags.all())
+        self.assertEqual(response.data["tags"], TagSerializer(recipe.tags, many=True).data)
+
+    def test_can_add_a_tag_when_updating_a_recipe(self):
+        # create a recipe
+        recipe = create_recipe(user=self.user)
+        
+        # update the recipe adding a tag
+        payload = {"tags": [{"name": "Lunch"}, ]}
+        url = detail_url(recipe_id=recipe.id)
+        response = self.client.patch(url, data=payload, format="json")
+
+        # check the recipe was updated
+        self.assertEqual(response.status_code, status.HTTP_200_OK)        
+        tag = Tag.objects.get(user=self.user, name="Lunch")       
+        self.assertIn(tag, recipe.tags.all())
+
+    def test_change_tag_of_a_recipe(self):
+        
+        # create a recipe with a tag
+        tag_breakfast = Tag.objects.create(user=self.user, name="Breakfast")
+        recipe = create_recipe(user=self.user)
+        recipe.tags.add(tag_breakfast)
+
+        # update the tag
+        payload = {"tags": [{"name": "Lunch"}, ]}
+        url = detail_url(recipe_id=recipe.id)
+        response = self.client.patch(url, data=payload, format="json")
+
+        # check the tag was updated successfully
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        tag_lunch = Tag.objects.get(user=self.user, name="Lunch")
+        self.assertIn(tag_lunch, recipe.tags.all())
+        self.assertNotIn(tag_breakfast, recipe.tags.all())
+ 
+    def test_clear_recipe_tags(self):
+
+        # create a recipe with a tag
+        tag_breakfast = Tag.objects.create(user=self.user, name="Breakfast")
+        recipe = create_recipe(user=self.user)
+        recipe.tags.add(tag_breakfast)
+
+        # delete the tag
+        payload = {"tags": []}
+        url = detail_url(recipe_id=recipe.id)
+        response = self.client.patch(url, data=payload, format="json")
+
+        # check the tag was successfully deleted
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(recipe.tags.count(), 0)
