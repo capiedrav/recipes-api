@@ -8,7 +8,12 @@ from decimal import Decimal
 from core_app.models import Recipe, Tag, Ingredient
 
 
-User = get_user_model()
+def create_user(email="testuser@example.com", password="testpass123"):
+        """
+        Create and return an user.
+        """
+
+        return get_user_model().objects.create_user(email, password)
 
 
 class UserModelTests(TestCase):
@@ -24,7 +29,7 @@ class UserModelTests(TestCase):
         email = "test@example.com"
         password = "testpass123"
         
-        user = User.objects.create_user(email=email, password=password)
+        user = create_user(email=email, password=password)
 
         self.assertEqual(user.email, email)
         self.assertTrue(user.check_password(password))
@@ -42,7 +47,7 @@ class UserModelTests(TestCase):
         ]
         
         for email, expected in sample_emails:
-            user = User.objects.create_user(email=email, password="testpass123")
+            user = create_user(email=email, password="testpass123")
 
             self.assertEqual(user.email, expected)
 
@@ -52,14 +57,14 @@ class UserModelTests(TestCase):
         """
 
         with self.assertRaises(ValueError):
-            User.objects.create_user(email="", password="testpass123")
+            create_user(email="", password="testpass123")
 
     def test_create_superuser(self):
         """
         Test creating a supersuser.
         """
         
-        user = User.objects.create_superuser(email="superuser@example.com", password="testpass123")
+        user = get_user_model().objects.create_superuser(email="superuser@example.com", password="testpass123")
 
         self.assertTrue(user.is_superuser)
         self.assertTrue(user.is_staff)
@@ -75,7 +80,7 @@ class RecipeModelTests(TestCase):
         Test creating a recipe is successful.
         """
 
-        user = User.objects.create_user(email="testuser@example.com", password="testpass123")
+        user = create_user()
 
         recipe = Recipe.objects.create(
             user=user,
@@ -92,21 +97,14 @@ class RecipeModelTests(TestCase):
 class TagModelTests(TestCase):
     """
     Tests for Tag model.
-    """
-
-    def create_user(self, email="testuser@example.com", password="testpass123"):
-        """
-        Create and return an user.
-        """
-
-        return User.objects.create_user(email, password)
+    """    
 
     def test_create_tag(self):
         """
         Test creating a tag is successful.
         """
 
-        user = self.create_user()
+        user = create_user()
         tag = Tag.objects.create(user=user, name="Tag1")
 
         self.assertEqual(str(tag), tag.name)
@@ -119,7 +117,7 @@ class IngredientModelTests(TestCase):
 
     def test_create_ingredient(self):
 
-        user = User.objects.create_user(email="testuser@example.com", password="testpass123")
+        user = create_user()
         ingredient = Ingredient.objects.create(user=user, name="Ingredient1")
 
         self.assertEqual(str(ingredient), ingredient.name)
