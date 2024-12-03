@@ -70,7 +70,7 @@ class Recipe(models.Model):
     price = models.DecimalField(max_digits=5, decimal_places=2)
     link = models.CharField(max_length=255, blank=True)
     tags = models.ManyToManyField("Tag") # many recipes can have many tags
-
+    ingredients = models.ManyToManyField("Ingredient") # many recipes can have many ingredients
 
     def __str__(self):
 
@@ -91,4 +91,16 @@ class Tag(models.Model):
 
         return self.name
     
+
+class Ingredient(models.Model):
+    """
+    Ingredient model.
+    """
+
+    name = models.CharField(max_length=255)
+    user = models.ForeignKey(USER_MODEL, on_delete=models.CASCADE)
+
+    def __str__(self):
+
+        return self.name
     
