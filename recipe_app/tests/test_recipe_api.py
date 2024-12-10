@@ -8,12 +8,14 @@ from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
-from core_app.models import Recipe, Tag
-from recipe_app.serializers import RecipeSerializer, RecipeDetailSerializer, TagSerializer
+from core_app.models import Recipe, Tag, Ingredient
+from recipe_app.serializers import RecipeSerializer, RecipeDetailSerializer, \
+     TagSerializer, IngredientSerializer 
 
 
 RECIPES_URL = reverse("recipe_app:recipe-list")
 User = get_user_model()
+
 
 def create_user(**params):
     """
@@ -320,3 +322,54 @@ class PrivateRecipeAPITests(TestCase):
         # check the tag was successfully deleted
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(recipe.tags.count(), 0)
+
+    def test_create_a_recipe_with_ingredients(self):
+        
+        # create a recipe 
+        payload = {
+            "title": "Cauliflower Tacos",
+            "time_minutes": 60,
+            "price": Decimal("4.30"),
+            "ingredients": [ # note the recipe include ingredients
+                    {"name": "Cauliflower"},
+                    {"name": "Salt"}
+                ]
+        }
+        response = self.client.post(RECIPES_URL, data=payload, format="json")
+
+        # check the recipe was created 
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        recipes = Recipe.objects.filter(user=self.user)
+        self.assertEqual(recipes.count(), 1)
+
+        # check the ingredients were created correctly
+        ingredients = Ingredient.objects.filter(user=self.user)
+        self.assertEqual(ingredients.count(), 2)
+        self.assertEqual(response.data["ingredients"], IngredientSerializer(ingredients, many=True).data)
+        
+    def test_create_a_recipe_with_existing_ingredients_dont_duplicate_ingredients(self):
+
+        # create an ingredient
+        ingredient = Ingredient.objects.create(user=self.user, name="Lemon")
+
+        # create a recipe 
+        payload = {
+            "title": "Vietnamese Soup",
+            "time_minutes": 25,
+            "price": Decimal("2.55"),
+            "ingredients": [
+                {"name": "Lemon"}, # note this ingredient already exists in the database
+                {"name": "Fish Sauce"}
+            ]
+        }
+        response = self.client.post(RECIPES_URL, data=payload, format="json")
+
+        # check the recipe was created successfully
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        recipes = Recipe.objects.filter(user=self.user)
+        self.assertEqual(recipes.count(), 1)
+
+        # check that no duplicate ingredients were created
+        ingredients = Ingredient.objects.filter(user=self.user)
+        self.assertEqual(ingredients.count(), 2)
+        self.assertEqual(response.data["ingredients"], IngredientSerializer(ingredients, many=True).data)
