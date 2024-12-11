@@ -69,7 +69,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         Create a recipe.
         """
 
-        # remove tags and ingredients from validate_data dict
+        # remove tags and ingredients from validated_data dict
         tags = validated_data.pop("tags", []) 
         ingredients = validated_data.pop("ingredients", [])
 
@@ -84,11 +84,17 @@ class RecipeSerializer(serializers.ModelSerializer):
         Update a recipe.
         """
 
-        tags = validated_data.pop("tags", None) # remove tags from validate_data dict  
+        # remove tags and ingredients from validated_data dict 
+        tags = validated_data.pop("tags", None) 
+        ingredients = validated_data.pop("ingredients", None) 
 
         if tags is not None: # add the new tags to the recipe
             instance.tags.clear() # clear existing recipe tags
             self._get_or_create_tags(tags=tags, recipe=instance)
+
+        if ingredients is not None: # add the new ingredients to the recipe
+            instance.ingredients.clear() # clear existing recipe ingredients
+            self._get_or_create_ingredients(ingredients=ingredients, recipe=instance)
 
         # update remaining fields of the recipe
         for attr, value in validated_data.items():

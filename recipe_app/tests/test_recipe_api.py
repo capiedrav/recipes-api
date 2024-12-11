@@ -373,3 +373,52 @@ class PrivateRecipeAPITests(TestCase):
         ingredients = Ingredient.objects.filter(user=self.user)
         self.assertEqual(ingredients.count(), 2)
         self.assertEqual(response.data["ingredients"], IngredientSerializer(ingredients, many=True).data)
+
+    def test_create_ingredient_on_recipe_update(self):
+
+        # create a recipe
+        recipe = create_recipe(user=self.user)
+
+        # add an ingredient to the recipe using the API
+        payload = {"ingredients": [{"name": "Limes"}, ]}
+        url = detail_url(recipe_id=recipe.id)
+        response = self.client.patch(url, data=payload, format="json")
+
+        # check the ingredient was added to the recipe
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        new_ingredient = Ingredient.objects.get(user=self.user, name="Limes")
+        self.assertIn(new_ingredient, recipe.ingredients.all())
+
+    def test_assigning_an_ingredient_on_recipe_update(self):
+
+        # create a recipe with one ingredient
+        recipe = create_recipe(user=self.user)
+        ingredient_1 = Ingredient.objects.create(user=self.user, name="Pepper")
+        recipe.ingredients.add(ingredient_1)
+
+        # update the ingredients of the recipe using the API
+        ingredient_2 = Ingredient.objects.create(user=self.user, name="Chili")
+        payload = {"ingredients": [{"name": "Chili"}, ]}
+        url = detail_url(recipe_id=recipe.id)
+        response = self.client.patch(url, data=payload, format="json")
+
+        # check the recipe ingredients were updated
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn(ingredient_2, recipe.ingredients.all())
+        self.assertNotIn(ingredient_1, recipe.ingredients.all())
+
+    def test_clear_recipe_ingredients(self):
+        
+        # create a recipe with an ingredient
+        ingredient = Ingredient.objects.create(user=self.user, name="Garlic")
+        recipe = create_recipe(user=self.user)
+        recipe.ingredients.add(ingredient)
+
+        # delete the ingredient using the API
+        payload = {"ingredients": []}
+        url = detail_url(recipe_id=recipe.id)
+        response = self.client.patch(url, data=payload, format="json")
+
+        # check the ingredient was deleted
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(recipe.ingredients.count(), 0)
