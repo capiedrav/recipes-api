@@ -7,15 +7,20 @@ ENV PYTHONUNBUFFERED=1
 
 EXPOSE 8000
 
-# install postgress client and psycopg2 (postgres python adaptor)
-RUN pip install --upgrade pip && \    
-    apk add --update --no-cache postgresql-client && \
+# install postgres and pillow dependencies
+RUN pip install --upgrade pip && \ 
+    # install postgres client
+    apk add --update --no-cache postgresql-client \
+    # install pillow dependency
+    jpeg-dev && \ 
     # install psycopg2 build dependencies
     apk add --update --no-cache --virtual .tmp-build-deps \
-    build-base postgresql-dev musl-dev && \
-    # install psycopg2
-    pip install psycopg2 && \
-    # remove pyscopg2 build dependencies
+    build-base postgresql-dev musl-dev \
+    # install more pillow dependencies
+    zlib zlib-dev && \
+    # install psycopg2 and pillow
+    pip install psycopg2 pillow && \
+    # remove pyscopg2 and pillow build dependencies
     apk del .tmp-build-deps        
 
 # install requirements
