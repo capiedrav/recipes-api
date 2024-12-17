@@ -5,7 +5,8 @@ Tests for models.
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from decimal import Decimal
-from core_app.models import Recipe, Tag, Ingredient
+from core_app.models import Recipe, Tag, Ingredient, recipe_image_file_path
+from unittest.mock import patch
 
 
 def create_user(email="testuser@example.com", password="testpass123"):
@@ -91,7 +92,16 @@ class RecipeModelTests(TestCase):
         )
 
         self.assertEqual(Recipe.objects.count(), 1)
-        self.assertEqual(str(recipe), recipe.title)         
+        self.assertEqual(str(recipe), recipe.title)
+
+    @patch("core_app.models.uuid.uuid4")
+    def test_generate_image_file_path(self, mock_uuid4):
+
+        uuid = "test-uuid"
+        mock_uuid4.return_value = uuid
+        file_path = recipe_image_file_path(None, "example.jpg")
+
+        self.assertEqual(file_path, f"uploads/recipe/{uuid}.jpg")
 
 
 class TagModelTests(TestCase):
@@ -121,3 +131,4 @@ class IngredientModelTests(TestCase):
         ingredient = Ingredient.objects.create(user=user, name="Ingredient1")
 
         self.assertEqual(str(ingredient), ingredient.name)
+
