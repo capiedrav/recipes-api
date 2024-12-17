@@ -2,3 +2,5 @@ Dockerfile
 .git*
 .docker
 *.env
+static_files
+media_files
