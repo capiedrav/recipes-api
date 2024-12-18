@@ -40,6 +40,9 @@ RUN adduser --disabled-password --no-create-home django-user
 # copy source code
 COPY . .
 
+# create folders for static and media files
+RUN mkdir -p static_files media_files
+
 # change ownership of the files
 RUN chown -R django-user .
 

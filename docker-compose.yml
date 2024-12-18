@@ -9,6 +9,8 @@ services:
     
     volumes:
       - .:/recipe-app-api
+      - recipe-api_media_files:/recipe-app-api/media_files
+      - recipe-api_static_files:/recipe-app-api/static_files
     
     command: > # > symbol enables multiline commands
       sh -c "python manage.py wait_for_db &&
@@ -19,7 +21,7 @@ services:
       - DB_HOST=db
       - DB_NAME=devdb
       - DB_USER=devuser
-      - DB_PASS=unodostres
+      - DB_PASS=unodostres     
 
     depends_on:
       - db
@@ -40,5 +42,7 @@ services:
     container_name: "recipe-app-dev-db-ctr"
 
 volumes:
-  recipe-app-dev-db:
+  recipe-app-dev-db:  
+  recipe-api_media_files:
+  recipe-api_static_files:
   
