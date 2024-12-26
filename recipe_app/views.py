@@ -13,7 +13,24 @@ from core_app.models import Recipe, Tag, Ingredient
 from recipe_app.serializers import RecipeSerializer, RecipeDetailSerializer, \
      TagSerializer, IngredientSerializer, RecipeImageSerializer
 
+# decorate RecipeViewSet class to document tags and ingredients params in swagger browsable API
+@extend_schema_view(
+    list=extend_schema( # this only applies to the recipe-list endpoint
+        parameters=[
+            OpenApiParameter(
+                name="tags", 
+                type=OpenApiTypes.STR,
+                description="Comma separated list of tag ids to filter"
+            ),
+            OpenApiParameter(
+                name="ingredients",
+                type=OpenApiTypes.STR,
+                description="Comma separated list of ingredient ids to filter"
+            )
 
+        ]
+    )
+)
 class RecipeViewSet(viewsets.ModelViewSet):
     """
     view for manage recipe APIs.
