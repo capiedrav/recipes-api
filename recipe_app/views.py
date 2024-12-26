@@ -7,6 +7,8 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from drf_spectacular.utils import extend_schema_view, extend_schema, \
+     OpenApiParameter, OpenApiTypes
 from core_app.models import Recipe, Tag, Ingredient
 from recipe_app.serializers import RecipeSerializer, RecipeDetailSerializer, \
      TagSerializer, IngredientSerializer, RecipeImageSerializer
@@ -23,12 +25,30 @@ class RecipeViewSet(viewsets.ModelViewSet):
     authentication_classes = [TokenAuthentication, ]
     permission_classes = [IsAuthenticated, ]
 
+    def _params_to_ints(self, params):
+        """
+        Convert params (a list of strings) to a list of ints.
+        """
+
+        return [int(str_id) for str_id in params.split(",")]
+
     def get_queryset(self):
         """
         Retrieve recipes for authenticated user only.
         """
+        
+        tags = self.request.query_params.get("tags")
+        ingredients = self.request.query_params.get("ingredients")
 
-        return self.queryset.filter(user=self.request.user).order_by("-id")
+        if tags:
+            tag_ids = self._params_to_ints(tags)
+            self.queryset = self.queryset.filter(tags__id__in=tag_ids)
+        
+        if ingredients:
+            ingredient_ids = self._params_to_ints(ingredients)
+            self.queryset = self.queryset.filter(ingredients__id__in=ingredient_ids)
+
+        return self.queryset.filter(user=self.request.user).order_by("-id").distinct()
 
     def get_serializer_class(self):
         """

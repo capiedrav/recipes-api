@@ -432,6 +432,53 @@ class PrivateRecipeAPITests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(recipe.ingredients.count(), 0)
 
+    def test_filter_recipes_by_tags(self):
+
+        # create two recipes with their respective tags
+        recipe1 = create_recipe(user=self.user, title="Thai vegetable curry")
+        recipe2 = create_recipe(user=self.user, title="Aubergine with thahini")
+        tag1 = Tag.objects.create(user=self.user, name="Vegan")
+        tag2 = Tag.objects.create(user=self.user, name="Vegetarian")
+        recipe1.tags.add(tag1)
+        recipe2.tags.add(tag2)
+
+        # create a recipe without any tags
+        recipe3 = create_recipe(user=self.user, title="Fish and chips")
+        
+        # make a GET request passing tags ids as parameters
+        params = {"tags": f"{tag1.id},{tag2.id}"}
+        response = self.client.get(RECIPES_URL, data=params)
+
+        # check that the recipes retrieved are the ones with the 
+        # correct tags
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn(RecipeSerializer(recipe1).data, response.data)
+        self.assertIn(RecipeSerializer(recipe2).data, response.data)
+        self.assertNotIn(RecipeSerializer(recipe3).data, response.data)
+
+    def test_filter_recipes_by_ingredients(self):
+
+        recipe1 = create_recipe(user=self.user, title="Posh beans on toast")
+        recipe2 = create_recipe(user=self.user, title="Chicken cacciatore")
+        ingredient1 = Ingredient.objects.create(user=self.user, name="Feta cheese")
+        ingredient2 = Ingredient.objects.create(user=self.user, name="Chicken")
+        recipe1.ingredients.add(ingredient1)
+        recipe2.ingredients.add(ingredient2)
+
+        # create a recipe without any ingredients
+        recipe3 = create_recipe(user=self.user, title="Fish and chips")
+        
+        # make a GET request passing tags ids as parameters
+        params = {"ingredients": f"{ingredient1.id},{ingredient2.id}"}
+        response = self.client.get(RECIPES_URL, data=params)
+
+        # check that the recipes retrieved are the ones with the 
+        # correct ingredients
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn(RecipeSerializer(recipe1).data, response.data)
+        self.assertIn(RecipeSerializer(recipe2).data, response.data)
+        self.assertNotIn(RecipeSerializer(recipe3).data, response.data)
+
 
 class ImageUploadTests(TestCase):
     """
