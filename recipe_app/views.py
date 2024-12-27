@@ -103,6 +103,18 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# decorate BaseRecipeAttributesViewSet class to document assigned_only parameter in swagger browsable API
+@extend_schema_view(
+        list=extend_schema(
+            parameters=[
+                OpenApiParameter(
+                    name="assigned_only",
+                    type=OpenApiTypes.INT, enum=[0, 1],
+                    description="Filter by items assigned to recipes"
+                )
+            ]
+        )
+)
 class BaseRecipeAttributesViewSet(viewsets.ModelViewSet):
     """
     Base class for Recipe attributes (i.e., tags, ingredients).
