@@ -13,6 +13,7 @@ from core_app.models import Recipe, Tag, Ingredient
 from recipe_app.serializers import RecipeSerializer, RecipeDetailSerializer, \
      TagSerializer, IngredientSerializer, RecipeImageSerializer
 
+
 # decorate RecipeViewSet class to document tags and ingredients params in swagger browsable API
 @extend_schema_view(
     list=extend_schema( # this only applies to the recipe-list endpoint
@@ -100,10 +101,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            
-        
-
-
 
 
 class BaseRecipeAttributesViewSet(viewsets.ModelViewSet):
@@ -114,12 +111,26 @@ class BaseRecipeAttributesViewSet(viewsets.ModelViewSet):
     authentication_classes = [TokenAuthentication, ]
     permission_classes = [IsAuthenticated, ]
 
+    def _param_to_bool(self):
+        """
+        converts assigned_only param in url to boolean.
+        """
+
+        # get state of assigned_only param in the request url
+        return bool(int(self.request.query_params.get("assigned_only", 0)))
+
     def get_queryset(self):
         """
         Filter queryset to the authenticated user.
         """
 
-        return self.queryset.filter(user=self.request.user).order_by("-name")
+        assigned_only = self._param_to_bool()
+
+        # only return tags or ingredients assigned to recipes
+        if assigned_only:
+            self.queryset = self.queryset.filter(recipe__isnull=False)
+
+        return self.queryset.filter(user=self.request.user).order_by("-name").distinct()
 
     def perform_create(self, serializer):
         """

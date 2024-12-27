@@ -2,12 +2,13 @@
 Tests for the ingredient API.
 """
 
+from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
-from core_app.models import Ingredient
+from core_app.models import Ingredient, Recipe
 from recipe_app.serializers import IngredientSerializer
 
 
@@ -117,3 +118,56 @@ class PrivateIngredientsAPITests(TestCase):
         # check the ingredient was deleted
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Ingredient.objects.count(), 0)
+
+    def test_filter_ingredients_by_those_assigned_to_recipes(self):
+        
+        # create a recipe with one ingredient
+        ingredient1 = Ingredient.objects.create(user=self.user, name="Apples")        
+        recipe = Recipe.objects.create(
+            title="Apple Crumble",
+            time_minutes=5,
+            price=Decimal("4.50"),
+            user=self.user
+        )
+        recipe.ingredients.add(ingredient1)
+
+        # create another ingredient (not assigned to any recipe)
+        ingredient2 = Ingredient.objects.create(user=self.user, name="Turkey")
+
+        # requests ingredients that are assigned to recipes
+        response = self.client.get(INGREDIENTS_URL, data={"assigned_only": 1})
+
+        # check that only ingredients assigned to recipes were retrieved
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn(IngredientSerializer(ingredient1).data, response.data)
+        self.assertNotIn(IngredientSerializer(ingredient2).data, response.data)
+
+    def test_filtered_ingredients_are_unique(self):
+
+        # create two recipes with the same ingredient
+        ingredient1 = Ingredient.objects.create(user=self.user, name="Eggs")
+        recipe1 = Recipe.objects.create(
+            title="Eggs Benedict",
+            time_minutes=60,
+            price=Decimal("7.00"),
+            user=self.user
+        )
+        recipe2 = Recipe.objects.create(
+            title="Herb Eggs",
+            time_minutes=20,
+            price=Decimal("4.00"),
+            user=self.user
+        )
+        recipe1.ingredients.add(ingredient1)
+        recipe2.ingredients.add(ingredient1)
+        
+        # create another ingredient (not assigned to any recipe)
+        ingredient2 = Ingredient.objects.create(user=self.user, name="Meat")
+
+        # requests ingredients that are assigned to recipes
+        response = self.client.get(INGREDIENTS_URL, data={"assigned_only": 1})
+
+        # check that the ingredient retrieved is not duplicated
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0], IngredientSerializer(ingredient1).data)    
